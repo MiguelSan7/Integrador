@@ -159,6 +159,9 @@ SET SQL_MODE=@OLD_SQL_MODE;
 SET FOREIGN_KEY_CHECKS=@OLD_FOREIGN_KEY_CHECKS;
 SET UNIQUE_CHECKS=@OLD_UNIQUE_CHECKS;
 
+INSERT INTO `TOYS`.`ROLES` (`ID_ROL`, `NOMBRE`) VALUES (1, 'ADMINISTRADOR'),
+(2, 'CLIENTE');
+
 -- -----------------------------------------------------
 -- Data for table `mydb`.`USUARIOS`
 -- -----------------------------------------------------
@@ -258,8 +261,6 @@ INSERT INTO `TOYS`.`INVENTARIO` (`ID_INS`, `NOMBRE`, `CANTIDAD`, `CATEGORIA`, `F
 
 COMMIT;
 
-INSERT INTO `TOYS`.`ROLES` (`ID_ROL`, `NOMBRE`) VALUES (1, 'ADMINISTRADOR'),
-(2, 'CLIENTE');
 -- -----------------------------------------------------
 -- Data for table `mydb`.`ORDEN_VENTA`
 -- -----------------------------------------------------
