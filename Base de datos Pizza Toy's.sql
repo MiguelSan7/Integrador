@@ -275,3 +275,141 @@ INSERT INTO `TOYS`.`detalle_orden` (`NO_ORDEN`, `PRODUCTO`, `CANTIDAD`) VALUES (
 INSERT INTO `TOYS`.`detalle_orden` (`NO_ORDEN`, `PRODUCTO`, `CANTIDAD`) VALUES (2,10,1);
 
 COMMIT;
+
+select * from usuarios;
+DELIMITER //
+CREATE PROCEDURE InsertarUsuarios(IN u_Nombre VARCHAR(50),
+    IN u_Direccion VARCHAR(60),
+    IN u_Telefono CHAR(10),
+    IN u_Correo VARCHAR(60),
+    IN u_Contrasena VARCHAR(50),
+    IN u_Rol INT
+)
+BEGIN
+    INSERT INTO `TOYS`.`USUARIOS` (`NOMBRE`,`DIRECCION`,`TELEFONO`,`CORREO`,`CONTRASEÑA`, `ROL`) VALUES (u_Nombre,
+        u_Direccion,
+        u_Telefono,
+        u_Correo,
+        u_Contrasena,
+        u_Rol
+    );
+END //
+DELIMITER ;
+
+USE TOYS;
+/*Ticket*/
+SELECT U.NOMBRE AS Usuario, CONCAT(P.NOMBRE,' ',P.TAMAÑO) AS Producto, DEO.CANTIDAD, P.PRECIO, OV.FECHA, OV.HORA, OV.FORMA_PAGO, S.NOMBRE AS Sucursal
+FROM orden_venta OV
+INNER JOIN usuarios U ON U.ID_USUARIO = OV.USUARIO
+INNER JOIN detalle_orden DEO ON DEO.NO_ORDEN = OV.NO_ORDEN
+INNER JOIN productos P ON P.CODIGO = DEO.PRODUCTO
+INNER JOIN sucursales S ON S.ID_SUC = OV.SUCURSAL
+WHERE U.ID_USUARIO = 1;
+
+/*Total a pagar*/
+SELECT SUM(P.PRECIO) AS TOTAL
+FROM orden_venta OV
+INNER JOIN usuarios U ON U.ID_USUARIO = OV.USUARIO
+INNER JOIN detalle_orden DEO ON DEO.NO_ORDEN = OV.NO_ORDEN
+INNER JOIN productos P ON P.CODIGO = DEO.PRODUCTO
+INNER JOIN sucursales S ON S.ID_SUC = OV.SUCURSAL
+WHERE U.ID_USUARIO = 1;
+
+/*Para Login*/
+SELECT * FROM USUARIOS WHERE NOMBRE = '$' AND CONTRASEÑA = '$';
+
+/*Inventario al inicio de dia*/
+SELECT
+  I.NOMBRE AS NombreInventario,
+  I.CANTIDAD AS InventarioInicioDia,
+  (I.CANTIDAD - IFNULL(SUM(CASE WHEN DATE_FORMAT(OV.FECHA, '%Y-%m-%d') = CURDATE() THEN DEO.CANTIDAD ELSE 0 END), 0)) AS InventarioFinalDia
+FROM
+  INVENTARIO I
+LEFT JOIN
+  DETALLE_ORDEN DEO ON DEO.PRODUCTO = I.ID_INS
+LEFT JOIN
+  ORDEN_VENTA OV ON OV.NO_ORDEN = DEO.NO_ORDEN
+WHERE
+  DATE_FORMAT(OV.FECHA, '%Y-%m-%d') <= CURDATE() OR OV.FECHA IS NULL
+GROUP BY
+  I.NOMBRE, I.CANTIDAD;
+
+INSERT INTO ORDEN_VENTA (NO_ORDEN, FECHA, USUARIO, TIPO, HORA, FORMA_PAGO, SUCURSAL)
+VALUES (4, CURDATE(), 1, 'AQUI', '12:00:00', 'EFECTIVO', 1);
+INSERT INTO DETALLE_ORDEN (NO_ORDEN, PRODUCTO, CANTIDAD)
+VALUES (4, 1, 5); -- Ejemplo: Producto con ID 1 y cantidad 5
+
+DELIMITER //
+
+CREATE PROCEDURE Cierre()
+BEGIN
+  -- Cálculo del inventario al inicio y al final del día
+  SELECT
+    I.NOMBRE AS NombreInventario,
+    I.CANTIDAD AS InventarioInicioDia,
+    (I.CANTIDAD - IFNULL(SUM(CASE WHEN DATE_FORMAT(OV.FECHA, '%Y-%m-%d') = CURDATE() THEN DEO.CANTIDAD ELSE 0 END), 0)) AS InventarioFinalDia
+  FROM
+    INVENTARIO I
+  LEFT JOIN
+    DETALLE_ORDEN DEO ON DEO.PRODUCTO = I.ID_INS
+  LEFT JOIN
+    ORDEN_VENTA OV ON OV.NO_ORDEN = DEO.NO_ORDEN
+  WHERE
+    DATE_FORMAT(OV.FECHA, '%Y-%m-%d') <= CURDATE() OR OV.FECHA IS NULL
+  GROUP BY
+    I.NOMBRE, I.CANTIDAD;
+END //
+
+DELIMITER ;
+
+DELIMITER //
+
+CREATE PROCEDURE ActualizarInventario()
+BEGIN
+  -- Declarar variables
+  DECLARE producto_id INT;
+  DECLARE cantidad_vendida DECIMAL(10, 2);
+  
+  -- Cursor para recorrer las ventas
+  DECLARE cur CURSOR FOR
+    SELECT DEO.PRODUCTO, DEO.CANTIDAD
+    FROM DETALLE_ORDEN DEO
+    INNER JOIN ORDEN_VENTA OV ON OV.NO_ORDEN = DEO.NO_ORDEN
+    WHERE DATE_FORMAT(OV.FECHA, '%Y-%m-%d') = CURDATE();
+  
+  -- Manejo de excepciones
+  DECLARE CONTINUE HANDLER FOR NOT FOUND SET @finished = 1;
+  
+  -- Iniciar la transacción
+  START TRANSACTION;
+  
+  -- Abrir el cursor
+  OPEN cur;
+  
+  -- Iterar sobre las ventas y actualizar el inventario
+  read_loop: LOOP
+    FETCH cur INTO producto_id, cantidad_vendida;
+    
+    -- Salir del bucle si no hay más filas
+    IF @finished = 1 THEN
+      LEAVE read_loop;
+    END IF;
+    
+    -- Actualizar el inventario
+    UPDATE INVENTARIO
+    SET CANTIDAD = CANTIDAD - cantidad_vendida
+    WHERE ID_INS = producto_id;
+  END LOOP;
+  
+  -- Cerrar el cursor
+  CLOSE cur;
+  
+  -- Confirmar los cambios y finalizar la transacción
+  COMMIT;
+END //
+
+DELIMITER ;
+CALL Cierre();
+CALL ActualizarInventario();
+
+CALL InsertarUsuarios('Jonathan Reyes', 'Universidad Tecnologica de Torreon', '8719883929', 'jonathan@gmail.com', 'jona12345', 2);
