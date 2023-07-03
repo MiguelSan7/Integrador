@@ -295,6 +295,25 @@ BEGIN
     );
 END //
 DELIMITER ;
+CALL InsertarUsuarios('Jonathan Reyes', 'Universidad Tecnologica de Torreon', '8719883929', 'jonathan@gmail.com', 'jona12345', 2);
+SELECT * FROM USUARIOS;
+
+DELIMITER //
+CREATE PROCEDURE RegistrarEmpleados(IN E_Nombre VARCHAR(60),
+    IN E_Puesto ENUM('EMP GENERAL', 'ENCARGADO'),
+    IN E_Telefono CHAR(10),
+    IN E_Sucursal INT
+)
+BEGIN
+    INSERT INTO `TOYS`.`EMPLEADOS` (`NOMBRE`,`PUESTO`,`TELEFONO`,`SUCURSAL`) VALUES (E_Nombre,
+        E_Puesto,
+        E_Telefono,
+        E_Sucursal
+    );
+END //
+DELIMITER ;
+CALL RegistrarEmpleados('Servando Velasquez', 'EMP GENERAL', 8715393020, 1);
+SELECT * FROM EMPLEADOS;
 
 USE TOYS;
 /*Ticket*/
@@ -340,6 +359,9 @@ INSERT INTO DETALLE_ORDEN (NO_ORDEN, PRODUCTO, CANTIDAD)
 VALUES (4, 1, 5); -- Ejemplo: Producto con ID 1 y cantidad 5
 
 DELIMITER //
+
+use toys;
+select * from productos;
 
 CREATE PROCEDURE Cierre()
 BEGIN
@@ -412,4 +434,29 @@ DELIMITER ;
 CALL Cierre();
 CALL ActualizarInventario();
 
-CALL InsertarUsuarios('Jonathan Reyes', 'Universidad Tecnologica de Torreon', '8719883929', 'jonathan@gmail.com', 'jona12345', 2);
+
+
+SELECT orden_venta.no_orden, orden_venta.fecha, sum(productos.precio * detalle_orden.cantidad) as total
+FROM orden_venta
+INNER JOIN usuarios on usuarios.id_usuario = orden_venta.usuario
+INNER JOIN detalle_orden on detalle_orden.no_orden = orden_venta.no_orden
+INNER JOIN productos on productos.codigo = detalle_orden.producto
+GROUP BY orden_venta.no_orden;
+
+
+
+select * from PRODUCTOS;
+
+INSERT INTO ORDEN_VENTA (FECHA, USUARIO, TIPO, HORA, FORMA_PAGO, SUCURSAL) VALUES
+('2023-06-30', 3, 'LLEVAR', '08:25:00', 'EFECTIVO', 1);
+
+INSERT INTO DETALLE_ORDEN (NO_ORDEN, PRODUCTO, CANTIDAD) VALUES
+(3, 12, 2);
+INSERT INTO DETALLE_ORDEN (NO_ORDEN, PRODUCTO, CANTIDAD) VALUES
+(3, 10, 2);
+
+select * from detalle_orden;
+    UPDATE detalle_orden
+    SET CANTIDAD = 1
+    WHERE id_detalle = 6;
+
