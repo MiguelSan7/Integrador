@@ -368,16 +368,21 @@ transform: perspective(600px) rotateY(180deg);
 {
 transform: perspective(600px) rotateY(360deg);
 }
+.linka
+{
+display: inline-block;
+justify-content: left;
+}
 .butn-menu
 {
-    width: 60px;
-    height: 30px;
-    display: inline-block;
-    background:var(--main-color);
+    display: inline-flex;
+    background: var(--main-color)!important;
     border-radius: 0.5rem;
+    text-align: center;
+    height: 30px !important;
+    width: 70px;
 }
-.butn-menu a
+.butn-menu i
 {
-color: var(--bg-color);
-font: var(--p-font);
+    color: var(--text-color) !important;
 }
